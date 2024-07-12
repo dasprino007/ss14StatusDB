@@ -7,7 +7,7 @@ const PlayerTimeSchema = new Schema ({
     players : Number,
     map : String,
     preset: String,
-    Time_date:Date
+    Time_date:{type: Date, default: Date.now}
 })
 
-module.exports = MapsSchema
+module.exports = PlayerTimeSchema

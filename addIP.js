@@ -28,6 +28,6 @@ function escreverArquivo(name, ip){
         ip:ip
     })
     fs.writeFileSync(serversUrl,JSON.stringify(file, null, "\t"))
-    console.log(`Servidor ${name} adicionado`)
+    console.log(`O Servidor ${name} adicionado`)
 }
 

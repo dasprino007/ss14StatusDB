@@ -3,24 +3,32 @@ const fs = require('fs');
 const { writeFile } = require('fs/promises');
 const { default: mongoose } = require('mongoose');
 const roundSchema = require('./schema/round');
-let timer = 60000; // 60000 = 1 min
+const playerSchema = require('./schema/playersTime')
+const mapSchema = require('./schema/maps')
 let rawdata = fs.readFileSync('Data/servers.json')
 let serversUrl = JSON.parse(rawdata)
 
-conectar().catch(erro => console.error(erro))
+// varibles
+let timer = 60000; // 60000 = 1 min
+const db = "test"
 
-async function conectar(){
-    await moongose.connect("mongodb://127.0.0.1:27017/test")
+conectar("mongodb://127.0.0.1:27017/"+ db).catch(erro => console.error(erro))
+
+async function conectar(url){
+    await moongose.connect(url)
     .then(() => console.log("Mongo conectado"))
 }
 
+// transfomar isso em uma classe
 // TODO melhorar esse codigo
 async function MapServers(){
     serversUrl.servers.map(server => {
         let obj;
             fetch(`http://${server.ip}/status`)
             .then(data => data.json())
-            .then(data => obj = data)
+            .then(data => {
+                obj = data
+            })
             .then(async () => {
                 const roundModel = await mongoose.model(obj.name, roundSchema)
                 const round = await new roundModel({
@@ -41,10 +49,53 @@ async function MapServers(){
                     console.log("esta no lobby")
                     return;
                 }
+                addMapList(obj.name, obj.map)
                 await roundModel.findOneAndUpdate({round_id : obj.round_id}, {map: obj.map});
                 console.log(round)
                 console.log("atualizo round")
+                addPlayerTime(obj.name, obj.round_id,obj.map, obj.players, obj.preset)
             })
         })
 }
+async function addPlayerTime(name, round_id, map, players, preset){
+    const playerModel = moongose.model(`${name} - playerTime`, playerSchema)
+    const playertime = new playerModel({
+        name : name,
+        round_id: round_id,
+        players : players,
+        map : map,
+        preset: preset,
+    })
+    playertime.save()
+    console.log("player time salvo")
+}
 
+async function addMapList(name, mapp){
+    const roundModel = mongoose.model(name, roundSchema)
+    const mapModel = moongose.model(`${name} - MapsCount`, mapSchema)
+    const findMap = await roundModel.find({map: mapp}).exec()
+    const findCountMap = await mapModel.find({map: mapp}).exec()
+    console.log(findMap.length)
+    console.log(findCountMap.length)
+    if(findMap.length == 0 || findMap.length == null)
+    return
+    
+    else if(mapp == null)
+    return
+
+    else if(findCountMap.length == 0){
+    const mapping = new mapModel({
+        name: name,
+        map: mapp,
+        HowManyTimesWasPlayed : findMap.length
+    })
+    await mapping.save()
+    }
+    else if( findMap.length > 1 && findMap.length > findCountMap.HowManyTimesWasPlayed){
+        await mapModel.findOneAndUpdate({map: mapp},{HowManyTimesWasPlayed :  findMap.length})
+        console.log("mapa atualizado")
+    }
+    
+}
+
+setInterval(MapServers, timer*15)

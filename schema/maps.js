@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 const {Schema} = mongoose;
 
 const MapsSchema = new Schema ({
+    name: String,
     map : String,
-    HowManyTimesPlayed: Number
+    HowManyTimesWasPlayed: Number
 })
 
 module.exports = MapsSchema
