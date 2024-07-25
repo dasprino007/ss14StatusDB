@@ -7,7 +7,7 @@ const roundSchema = new Schema ({
     players : Number,
     map : String,
     preset: String,
-    round_start_time:String
+    round_start_time:Date
 })
 
 module.exports = roundSchema
